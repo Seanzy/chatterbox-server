@@ -11,21 +11,22 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
-
-var querystring = require('querystring');
 var _ = require('underscore');
+var uid = 0; 
 
 var data = {
   results: []
 };
 
-// var temp = {
-//   username: 'Mel Brooks',
-//   text: ('This is my message.'),
-//   roomname: 'lobby'
-// };
+var temp = {
+  id: uid++,
+  username: 'Mel Brooks',
+  text: 'This is my message.',
+  roomname: 'lobby'
+};
 
-// data.results.push(temp);
+data.results.push(temp);
+
 
 
 var defaultCorsHeaders = {
@@ -56,8 +57,12 @@ var requestHandler = function(request, response) {
   // http://parse.CAMPUS.hackreactor.com/chatterbox/classes/messages
   // if (request.method === 'GET' && request.url === '/echo') {
     
+  request.on('error', (err) => {
+    console.log('ERROR');
+  });
+    
   // GET
-  if (request.method === 'GET' || request.method === "OPTIONS") {
+  if (request.method === 'GET') {
     
     if (request.url !== "/classes/messages") {
       var statusCode = 404;
@@ -68,14 +73,22 @@ var requestHandler = function(request, response) {
     } else {
       var statusCode = 200;
       var headers = defaultCorsHeaders;
-      headers['Content-Type'] = 'text/plain';
+      headers['Content-Type'] = 'application/json';
       response.writeHead(statusCode, headers);
-      console.log("DATA GET ", JSON.stringify(data));
+      console.log("DATA GET ", data.results);
       response.end(JSON.stringify(data));
     }
     
     
     // post 
+  } else if( request.method === "OPTIONS" ) {
+    var statusCode = 200;
+    var headers = defaultCorsHeaders;
+    headers['Content-Type'] = 'application/json';
+    response.writeHead(statusCode, headers);
+    console.log("DATA GET ", data.results);
+    response.end();
+  
   } else if (request.method === 'POST') {
     
     if (request.url !== "/classes/messages") {
@@ -97,16 +110,11 @@ var requestHandler = function(request, response) {
 
       request.on('end', function () {
       
-        // getting data sent with post request. i.e post variable
-        var post = querystring.parse(body);
-        //console.log(post);
-        
-        _.each(post, function(el, key) {
-          console.log(typeof key);
-          data.results.push(JSON.parse(key));
-        });
-        
-        console.log("data.results", data.results);
+        var post = JSON.parse(body);
+        post.id = uid++;
+        console.log('POST TYPE ', post);
+        data.results.push(post);
+
         // response
         var statusCode = 201;
         var headers = defaultCorsHeaders;

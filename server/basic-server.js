@@ -40,3 +40,10 @@ server.listen(port, ip);
 // possibility of serving more requests. To stop your server, hit
 // Ctrl-C on the command line.
 
+/* initial setup 
+npm install
+npm install -g nodemon
+npm install querystring
+bower install inside client
+within server: nodemon basic-server.js
+*/
