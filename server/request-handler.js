@@ -11,18 +11,29 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
+
+var querystring = require('querystring');
+var _ = require('underscore');
+
 var data = {
   results: []
 };
 
-for (var i = 0; i < 10; i++) {
-  var temp = {
-    username: 'Mel Brooks',
-    text: ('This is my' + i + ' message.'),
-    roomname: 'lobby'
-  };
-  data.results.push(temp);
-}
+// var temp = {
+//   username: 'Mel Brooks',
+//   text: ('This is my message.'),
+//   roomname: 'lobby'
+// };
+
+// data.results.push(temp);
+
+
+var defaultCorsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'content-type, accept',
+  'access-control-max-age': 10 // Seconds.
+};
 
 
 
@@ -45,32 +56,65 @@ var requestHandler = function(request, response) {
   // http://parse.CAMPUS.hackreactor.com/chatterbox/classes/messages
   // if (request.method === 'GET' && request.url === '/echo') {
     
-  // if GET
-  if (request.method === 'GET') {
+  // GET
+  if (request.method === 'GET' || request.method === "OPTIONS") {
     
-    var statusCode = 200;
-    var headers = defaultCorsHeaders;
-    headers['Content-Type'] = 'text/plain';
-    response.writeHead(statusCode, headers);
-    //response.write(JSON.stringify(data), "utf8");
+    if (request.url !== "/classes/messages") {
+      var statusCode = 404;
+      var headers = defaultCorsHeaders;
+      headers['Content-Type'] = 'text/plain';
+      response.writeHead(statusCode, headers);
+      response.end('GET');
+    } else {
+      var statusCode = 200;
+      var headers = defaultCorsHeaders;
+      headers['Content-Type'] = 'text/plain';
+      response.writeHead(statusCode, headers);
+      console.log("DATA GET ", JSON.stringify(data));
+      response.end(JSON.stringify(data));
+    }
     
     
-    response.end(JSON.stringify(data));
-    
-    
+    // post 
   } else if (request.method === 'POST') {
     
+    if (request.url !== "/classes/messages") {
+      
+      var statusCode = 404;
+      var headers = defaultCorsHeaders;
+      headers['Content-Type'] = 'text/plain';
+      response.writeHead(statusCode, headers);
+      response.end('POST');
+      
+    } else {
+      
     // get the data that was sent with it
-    
-    console.log(request);
-    
-    var statusCode = 201;
-    var headers = defaultCorsHeaders;
-    headers['Content-Type'] = 'text/plain';
-    response.writeHead(statusCode, headers);
-    response.end('POST'); 
-     
-    
+      var body = "";
+      
+      request.on('data', function (data) {
+        body += data;
+      });
+
+      request.on('end', function () {
+      
+        // getting data sent with post request. i.e post variable
+        var post = querystring.parse(body);
+        //console.log(post);
+        
+        _.each(post, function(el, key) {
+          console.log(typeof key);
+          data.results.push(JSON.parse(key));
+        });
+        
+        console.log("data.results", data.results);
+        // response
+        var statusCode = 201;
+        var headers = defaultCorsHeaders;
+        headers['Content-Type'] = 'text/plain';
+        response.writeHead(statusCode, headers);
+        response.end('POST'); 
+      });
+    }
   }
   
   // // The outgoing status.
@@ -109,12 +153,6 @@ var requestHandler = function(request, response) {
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
-var defaultCorsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'content-type, accept',
-  'access-control-max-age': 10 // Seconds.
-};
 
-module.exports = requestHandler;
+module.exports.requestHandler = requestHandler;
 
